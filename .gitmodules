@@ -1,0 +1,6 @@
+[submodule "vendor/github.com/namsral/flag"]
+	path = vendor/github.com/namsral/flag
+	url = https://github.com/namsral/flag.git
+[submodule "vendor/github.com/plouc/go-gitlab-client"]
+	path = vendor/github.com/plouc/go-gitlab-client
+	url = https://github.com/plouc/go-gitlab-client.git
