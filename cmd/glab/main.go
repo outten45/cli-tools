@@ -17,7 +17,7 @@ type context struct {
 }
 
 func getContext(args []string) context {
-	fs := flag.NewFlagSetWithEnvPrefix(args[0], "GLAB", flag.PanicOnError)
+	fs := flag.NewFlagSetWithEnvPrefix(args[0], "GLAB", flag.ExitOnError)
 
 	host := fs.String("host", "", "name of the gitlab host")
 	apiPath := fs.String("apipath", "", "api path on the gitlab host")
@@ -25,9 +25,7 @@ func getContext(args []string) context {
 	match := fs.String("m", "", "regular expression to match the projects")
 	reposOnly := fs.Bool("r", false, "show the repositories only")
 
-	if err := fs.Parse(args[1:]); err != nil {
-		log.Fatalf("Error parsing project options: %s\n", err)
-	}
+	fs.Parse(args[1:])
 
 	return context{
 		Gitlab:    gogitlab.NewGitlab(*host, *apiPath, *token),
