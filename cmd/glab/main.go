@@ -11,8 +11,9 @@ import (
 )
 
 type context struct {
-	Gitlab *gogitlab.Gitlab
-	Match  string
+	Gitlab    *gogitlab.Gitlab
+	Match     string
+	ReposOnly bool
 }
 
 func getContext(args []string) context {
@@ -21,15 +22,17 @@ func getContext(args []string) context {
 	host := fs.String("host", "", "name of the gitlab host")
 	apiPath := fs.String("apipath", "", "api path on the gitlab host")
 	token := fs.String("token", "", "token for gitlab")
-	match := fs.String("r", "", "regular expression to match the projects")
+	match := fs.String("m", "", "regular expression to match the projects")
+	reposOnly := fs.Bool("r", false, "show the repositories only")
 
 	if err := fs.Parse(args[1:]); err != nil {
 		log.Fatalf("Error parsing project options: %s\n", err)
 	}
 
 	return context{
-		Gitlab: gogitlab.NewGitlab(*host, *apiPath, *token),
-		Match:  *match}
+		Gitlab:    gogitlab.NewGitlab(*host, *apiPath, *token),
+		Match:     *match,
+		ReposOnly: *reposOnly}
 }
 
 func filterProjects(projects []*gogitlab.Project, match string) []gogitlab.Project {
@@ -53,12 +56,17 @@ func listProjects(args []string) {
 
 	fp := filterProjects(projects, c.Match)
 
-	fmt.Printf("\n\tprojects found: %d\n\n", len(fp))
-	for c, project := range fp {
-		fmt.Printf("%d. %s: %s\n", (c + 1), project.Name, project.PathWithNamespace)
-		fmt.Printf("  > %s\n\n", project.SshRepoUrl)
+	if c.ReposOnly != true {
+		fmt.Printf("\n\tprojects found: %d\n\n", len(fp))
 	}
-	fmt.Println(" ")
+	for cnt, project := range fp {
+		if c.ReposOnly == true {
+			fmt.Printf("%s\n", project.SshRepoUrl)
+		} else {
+			fmt.Printf("%d. %s: %s\n", (cnt + 1), project.Name, project.PathWithNamespace)
+			fmt.Printf("  > %s\n\n", project.SshRepoUrl)
+		}
+	}
 }
 
 func main() {
