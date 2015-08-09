@@ -15,7 +15,7 @@ type context struct {
 	Match  string
 }
 
-func client(args []string) context {
+func getContext(args []string) context {
 	fs := flag.NewFlagSetWithEnvPrefix(args[0], "GLAB", flag.PanicOnError)
 
 	host := fs.String("host", "", "name of the gitlab host")
@@ -44,9 +44,8 @@ func filterProjects(projects []*gogitlab.Project, match string) []gogitlab.Proje
 	return fp
 }
 
-func projectList(args []string) {
-	c := client(args)
-	// fmt.Printf("context: %+v \n", *c.Gitlab)
+func listProjects(args []string) {
+	c := getContext(args)
 	projects, err := c.Gitlab.Projects()
 	if err != nil {
 		log.Fatalf("Error fetching projects: %s\n", err)
@@ -73,7 +72,7 @@ func main() {
 
 	switch subcommand {
 	case "projects":
-		projectList(args)
+		listProjects(args)
 	// case "replay":
 	default:
 		log.Fatal("Available commands: projects")
