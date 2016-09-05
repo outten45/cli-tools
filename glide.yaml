@@ -1,9 +1,9 @@
 package: github.com/outten45/cli-tools
-incmd: bash -l
 import:
-  - package: github.com/namsral/flag
-    repo:    https://github.com/namsral/flag
-    vcs:     git
-  - package: github.com/plouc/go-gitlab-client
-    repo:    https://github.com/plouc/go-gitlab-client
-    vcs:     git
+- package: github.com/namsral/flag
+  repo: https://github.com/namsral/flag
+  vcs: git
+- package: github.com/plouc/go-gitlab-client
+  repo: https://github.com/plouc/go-gitlab-client
+  vcs: git
+- package: github.com/gocarina/gocsv

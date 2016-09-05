@@ -1,6 +1,8 @@
-hash: 02eb85aa233f2a43d5186e6b529627a7fcda80f2ce737a06e785a18f6ca8ae46
-updated: 2016-09-04T20:20:02.724722934Z
+hash: d93cf267466018800c3bea0111674cd2d58fb56e15a1790f39c82575220356f2
+updated: 2016-09-04T22:31:26.653302672-04:00
 imports:
+- name: github.com/gocarina/gocsv
+  version: ebca700e1a9e70f1d9881e5e8a27f921b61740cc
 - name: github.com/namsral/flag
   version: e6432831f90663e9fb69ca75eca1c86f8f37f729
   repo: https://github.com/namsral/flag
