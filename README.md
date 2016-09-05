@@ -8,6 +8,10 @@ scripts later.
 There is a glab command that queries a gitlab instance on various things. See
 [glab README](cmd/glab/README.md) for more info.
 
+# jresults
+
+Command line tool for parsing the results of a jmeter test.
+
 # Development
 
 Use go 1.5 with the GO15VENDOREXPERIMENT=1 flag.

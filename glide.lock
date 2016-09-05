@@ -1,0 +1,12 @@
+hash: 02eb85aa233f2a43d5186e6b529627a7fcda80f2ce737a06e785a18f6ca8ae46
+updated: 2016-09-04T20:20:02.724722934Z
+imports:
+- name: github.com/namsral/flag
+  version: e6432831f90663e9fb69ca75eca1c86f8f37f729
+  repo: https://github.com/namsral/flag
+  vcs: git
+- name: github.com/plouc/go-gitlab-client
+  version: 97509738052118879f30ea4243998228468d3a2b
+  repo: https://github.com/plouc/go-gitlab-client
+  vcs: git
+testImports: []
