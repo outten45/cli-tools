@@ -7,3 +7,4 @@ import:
   repo: https://github.com/plouc/go-gitlab-client
   vcs: git
 - package: github.com/gocarina/gocsv
+- package: github.com/montanaflynn/stats
