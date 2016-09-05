@@ -1,17 +1,26 @@
 package main
 
 import (
-	"bufio"
-	"encoding/csv"
 	"fmt"
-	"io"
 	"log"
-
 	"os"
 
 	"github.com/gocarina/gocsv"
 	"github.com/namsral/flag"
 )
+
+func getResults(file *string) []*Result {
+	f, err := os.Open(*file)
+	if err != nil {
+		log.Fatalf("Error opening file: %s\n", *file)
+	}
+
+	results := []*Result{}
+	if err := gocsv.UnmarshalFile(f, &results); err != nil {
+		log.Fatalf("Error with gocsv UnmarshalFile: %s\n", err)
+	}
+	return results
+}
 
 func main() {
 	args := os.Args
@@ -23,32 +32,7 @@ func main() {
 		log.Fatal("csv file name not provided.")
 	}
 
-	f, err := os.Open(*file)
-	if err != nil {
-		log.Fatalf("Error opening file: %s\n", *file)
-	}
-	r := csv.NewReader(bufio.NewReader(f))
-
-	for {
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Printf(">>> %s <<<\n", record[0])
-	}
-
-	// move back to the beginning
-	f.Seek(0, io.SeekStart)
-
-	results := []*Result{}
-	if err := gocsv.UnmarshalFile(f, &results); err != nil { // Load clients from file
-		panic(err)
-	}
-
+	results := getResults(file)
 	fmt.Printf("%+v\n", results[0])
 }
 
