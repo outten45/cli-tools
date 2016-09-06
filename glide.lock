@@ -1,10 +1,10 @@
 hash: 69512753a86c138937f1bac8279a27b816864a254237e88616a1fb28d97885d4
-updated: 2016-09-05T15:29:47.444264904-04:00
+updated: 2016-09-05T15:36:15.041452746-04:00
 imports:
 - name: github.com/gocarina/gocsv
   version: ebca700e1a9e70f1d9881e5e8a27f921b61740cc
 - name: github.com/montanaflynn/stats
-  version: eeaced052adbcfeea372c749c281099ed7fdaa38
+  version: 60dcacf48f43d6dd654d0ed94120ff5806c5ca5c
 - name: github.com/namsral/flag
   version: e6432831f90663e9fb69ca75eca1c86f8f37f729
   repo: https://github.com/namsral/flag
