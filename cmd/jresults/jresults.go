@@ -1,5 +1,7 @@
 package main
 
+//go:generate go-bindata -o build_assets.go assets/
+
 import (
 	"fmt"
 	"log"
@@ -30,12 +32,19 @@ func main() {
 	// fmt.Printf("data: %+v\n------\n%+v\n", d, v)
 	// fmt.Printf("data: %+v\n\n", d.Pages["Home Page"])
 	printResults(d)
+
+	data, err := Asset("assets/main.html")
+	if err != nil {
+		// Asset was not found.
+		fmt.Printf("main.html wasn't not found: %+v\n", err)
+	}
+	fmt.Println(data)
 }
 
 func printResults(data jstats) {
 	for k, v := range data.Pages {
 		mn, _ := stats.Mean(v)
-		fmt.Printf("%s: \t %f\n", k, mn)
+		fmt.Printf("%s: \t %f (%d)\n", k, mn, len(v))
 	}
 
 	t, _ := stats.Mean(data.Total)
