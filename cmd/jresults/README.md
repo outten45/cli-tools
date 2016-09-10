@@ -10,6 +10,11 @@ the following command:
 
     $ go get -u github.com/jteeuwen/go-bindata/...
 
+If you make changes to the files in the assets directory, you will need to run
+the following command:
+
+    $ go generate
+
 # Usage
 
     $ jresults path/to/results_file.jtl

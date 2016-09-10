@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 
 	"github.com/gocarina/gocsv"
 	"github.com/montanaflynn/stats"
@@ -24,13 +25,9 @@ func main() {
 	}
 
 	results := getResults(file)
-
 	fmt.Printf("%+v\n", results[0])
 
 	d := getStats(results)
-	// v, _ := stats.Mean(d.Total)
-	// fmt.Printf("data: %+v\n------\n%+v\n", d, v)
-	// fmt.Printf("data: %+v\n\n", d.Pages["Home Page"])
 	printResults(d)
 
 	data, err := Asset("assets/main.html")
@@ -49,6 +46,11 @@ func printResults(data jstats) {
 
 	t, _ := stats.Mean(data.Total)
 	fmt.Printf("Total Mean: %f\n", t)
+
+	s := data.Stats()
+	for _, b := range s {
+		fmt.Printf(" jstat: %+v\n----------------------------------------\n", b)
+	}
 }
 
 func getResults(file *string) []*Result {
@@ -105,7 +107,47 @@ type Result struct {
 // bytes - number of bytes in the sample
 // latency - time to first response
 
+type jstat struct {
+	Label             string
+	Size              int
+	Mean              float64
+	StandardDeviation float64
+	Median            float64
+	Percent95         float64
+}
+
 type jstats struct {
 	Pages map[string]stats.Float64Data
 	Total stats.Float64Data
+}
+
+// make a slice of jstat sortable
+type js []jstat
+
+func (a js) Len() int      { return len(a) }
+func (a js) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a js) Less(i, j int) bool {
+	return a[i].Label < a[j].Label
+}
+
+func (j *jstats) Stats() []jstat {
+	m := make([]jstat, 0)
+
+	for label, page := range j.Pages {
+		mean, _ := page.Mean()
+		std, _ := page.StandardDeviation()
+		med, _ := page.Median()
+		p95, _ := page.Percentile(95.0)
+		s := jstat{
+			Label:             label,
+			Size:              page.Len(),
+			Mean:              mean,
+			StandardDeviation: std,
+			Median:            med,
+			Percent95:         p95,
+		}
+		m = append(m, s)
+	}
+	sort.Sort(js(m))
+	return m
 }
