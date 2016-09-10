@@ -3,7 +3,9 @@ package main
 //go:generate go-bindata -o build_assets.go assets/
 
 import (
+	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"os"
 	"sort"
@@ -25,17 +27,24 @@ func main() {
 	}
 
 	results := getResults(file)
-	fmt.Printf("%+v\n", results[0])
+	// fmt.Printf("%+v\n", results[0])
 
 	d := getStats(results)
-	printResults(d)
+	d.Stats()
+	// printResults(d)
+	genHTML(d)
+}
 
-	data, err := Asset("assets/main.html")
+func genHTML(data jstats) {
+	file, err := Asset("assets/main.html")
 	if err != nil {
 		// Asset was not found.
 		fmt.Printf("main.html wasn't not found: %+v\n", err)
 	}
-	fmt.Println(data)
+
+	t := template.New("Main HTML")
+	t, _ = t.Parse(string(file))
+	t.Execute(os.Stdout, data)
 }
 
 func printResults(data jstats) {
@@ -51,6 +60,8 @@ func printResults(data jstats) {
 	for _, b := range s {
 		fmt.Printf(" jstat: %+v\n----------------------------------------\n", b)
 	}
+	j, _ := json.Marshal(s)
+	fmt.Printf("json:\n%s\n", j)
 }
 
 func getResults(file *string) []*Result {
@@ -117,8 +128,9 @@ type jstat struct {
 }
 
 type jstats struct {
-	Pages map[string]stats.Float64Data
-	Total stats.Float64Data
+	Pages       map[string]stats.Float64Data
+	Total       stats.Float64Data
+	StatResults []jstat
 }
 
 // make a slice of jstat sortable
@@ -149,5 +161,6 @@ func (j *jstats) Stats() []jstat {
 		m = append(m, s)
 	}
 	sort.Sort(js(m))
+	j.StatResults = m
 	return m
 }
