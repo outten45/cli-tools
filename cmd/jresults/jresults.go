@@ -18,7 +18,7 @@ import (
 func main() {
 	// handle the arguments
 	args := os.Args
-	fs := flag.NewFlagSetWithEnvPrefix(args[0], "GLAB", flag.ExitOnError)
+	fs := flag.NewFlagSetWithEnvPrefix(args[0], "JRES", flag.ExitOnError)
 	file := fs.String("csv", "", "csv file with the results to parse")
 	fs.Parse(args[1:])
 
@@ -30,7 +30,6 @@ func main() {
 	// fmt.Printf("%+v\n", results[0])
 
 	d := getStats(results)
-	d.Stats()
 	// printResults(d)
 	genHTML(d)
 }
@@ -56,28 +55,24 @@ func printResults(data jstats) {
 	t, _ := stats.Mean(data.Total)
 	fmt.Printf("Total Mean: %f\n", t)
 
-	s := data.Stats()
-	for _, b := range s {
-		fmt.Printf(" jstat: %+v\n----------------------------------------\n", b)
-	}
-	j, _ := json.Marshal(s)
+	j, _ := json.Marshal(data.StatResults)
 	fmt.Printf("json:\n%s\n", j)
 }
 
-func getResults(file *string) []*Result {
+func getResults(file *string) []*CSVResult {
 	f, err := os.Open(*file)
 	if err != nil {
 		log.Fatalf("Error opening file: %s\n", *file)
 	}
 
-	results := []*Result{}
+	results := []*CSVResult{}
 	if err := gocsv.UnmarshalFile(f, &results); err != nil {
 		log.Fatalf("Error with gocsv UnmarshalFile: %s\n", err)
 	}
 	return results
 }
 
-func getStats(results []*Result) jstats {
+func getStats(results []*CSVResult) jstats {
 	pagesRaw := make(map[string][]int)
 	totalRaw := make([]int, len(results))
 
@@ -94,10 +89,13 @@ func getStats(results []*Result) jstats {
 		pages[k] = stats.LoadRawData(v)
 	}
 	total := stats.LoadRawData(totalRaw)
-	return jstats{Pages: pages, Total: total}
+
+	j := jstats{Pages: pages, Total: total}
+	j.Stats()
+	return j
 }
 
-type Result struct {
+type CSVResult struct {
 	TimeStamp    int    `csv:"timeStamp"`
 	Elapsed      int    `csv:"elapsed"`
 	Label        string `csv:"label"`
@@ -120,6 +118,8 @@ type Result struct {
 
 type jstat struct {
 	Label             string
+	Elapsed           stats.Float64Data
+	Bytes             stats.Float64Data
 	Size              int
 	Mean              float64
 	StandardDeviation float64
