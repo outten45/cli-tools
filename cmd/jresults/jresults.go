@@ -43,17 +43,16 @@ func genHTML(data jstats) {
 
 	t := template.New("Main HTML")
 	t, _ = t.Parse(string(file))
-	t.Execute(os.Stdout, data)
+	if err := t.Execute(os.Stdout, data); err != nil {
+		log.Fatalf("Error with template: %+v\n", err)
+	}
 }
 
 func printResults(data jstats) {
 	for k, v := range data.Pages {
-		mn, _ := stats.Mean(v)
-		fmt.Printf("%s: \t %f (%d)\n", k, mn, len(v))
+		mn, _ := stats.Mean(v.Elapsed)
+		fmt.Printf("%s: \t %f (%d)\n", k, mn, len(v.Elapsed))
 	}
-
-	t, _ := stats.Mean(data.Total)
-	fmt.Printf("Total Mean: %f\n", t)
 
 	j, _ := json.Marshal(data.StatResults)
 	fmt.Printf("json:\n%s\n", j)
@@ -73,24 +72,22 @@ func getResults(file *string) []*CSVResult {
 }
 
 func getStats(results []*CSVResult) jstats {
-	pagesRaw := make(map[string][]int)
-	totalRaw := make([]int, len(results))
-
-	for i, r := range results {
-		if _, ok := pagesRaw[r.Label]; !ok {
-			pagesRaw[r.Label] = make([]int, 0)
+	j := jstats{}
+	groups := make(map[string]jstat)
+	for _, r := range results {
+		if js, ok := groups[r.Label]; ok {
+			js.Elapsed = append(js.Elapsed, stats.LoadRawData([]int{r.Elapsed})...)
+			js.TimeStamps = append(js.TimeStamps, r.TimeStamp)
+			groups[r.Label] = js
+		} else {
+			groups[r.Label] = jstat{
+				Label:      r.Label,
+				TimeStamps: []int{r.TimeStamp},
+				Elapsed:    stats.LoadRawData([]int{r.Elapsed}),
+			}
 		}
-		pagesRaw[r.Label] = append(pagesRaw[r.Label], r.Elapsed)
-		totalRaw[i] = r.Elapsed
 	}
-
-	pages := make(map[string]stats.Float64Data)
-	for k, v := range pagesRaw {
-		pages[k] = stats.LoadRawData(v)
-	}
-	total := stats.LoadRawData(totalRaw)
-
-	j := jstats{Pages: pages, Total: total}
+	j.Pages = groups
 	j.Stats()
 	return j
 }
@@ -109,8 +106,8 @@ type CSVResult struct {
 // elapsed - in milliseconds
 // label - sampler label
 // responseCode - e.g. 200, 404
-// responseMessage - e.g. OK
-// threadName
+// responseMessage  e.g. OK
+// threadName - the name
 // dataType - e.g. text
 // success - true or false
 // bytes - number of bytes in the sample
@@ -118,9 +115,10 @@ type CSVResult struct {
 
 type jstat struct {
 	Label             string
+	TimeStamps        []int
 	Elapsed           stats.Float64Data
 	Bytes             stats.Float64Data
-	Size              int
+	Samples           int
 	Mean              float64
 	StandardDeviation float64
 	Median            float64
@@ -128,37 +126,37 @@ type jstat struct {
 }
 
 type jstats struct {
-	Pages       map[string]stats.Float64Data
-	Total       stats.Float64Data
+	Pages       map[string]jstat
 	StatResults []jstat
 }
 
-// make a slice of jstat sortable
+// make a slice of jstat sort-able
 type js []jstat
 
 func (a js) Len() int      { return len(a) }
 func (a js) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 func (a js) Less(i, j int) bool {
-	return a[i].Label < a[j].Label
+	return a[i].TimeStamps[0] < a[j].TimeStamps[0]
 }
 
 func (j *jstats) Stats() []jstat {
 	m := make([]jstat, 0)
 
-	for label, page := range j.Pages {
-		mean, _ := page.Mean()
-		std, _ := page.StandardDeviation()
-		med, _ := page.Median()
-		p95, _ := page.Percentile(95.0)
-		s := jstat{
-			Label:             label,
-			Size:              page.Len(),
-			Mean:              mean,
-			StandardDeviation: std,
-			Median:            med,
-			Percent95:         p95,
+	for _, js := range j.Pages {
+		if mean, err := js.Elapsed.Mean(); err == nil {
+			js.Mean = mean
 		}
-		m = append(m, s)
+		if std, err := js.Elapsed.StandardDeviation(); err == nil {
+			js.StandardDeviation = std
+		}
+		if med, err := js.Elapsed.Median(); err == nil {
+			js.Median = med
+		}
+		if p95, err := js.Elapsed.Percentile(95.0); err == nil {
+			js.Percent95 = p95
+		}
+		js.Samples = len(js.TimeStamps)
+		m = append(m, js)
 	}
 	sort.Sort(js(m))
 	j.StatResults = m
