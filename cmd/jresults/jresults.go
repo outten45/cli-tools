@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"sort"
+	"time"
 
 	"github.com/gocarina/gocsv"
 	"github.com/montanaflynn/stats"
@@ -88,7 +89,7 @@ func getStats(results []*CSVResult) jstats {
 		}
 	}
 	j.Pages = groups
-	j.Stats()
+	j.GenStats()
 	return j
 }
 
@@ -126,8 +127,10 @@ type jstat struct {
 }
 
 type jstats struct {
-	Pages       map[string]jstat
-	StatResults []jstat
+	StartTime       time.Time
+	Pages           map[string]jstat
+	StatResults     []jstat
+	StatResultsJSON string
 }
 
 // make a slice of jstat sort-able
@@ -139,7 +142,7 @@ func (a js) Less(i, j int) bool {
 	return a[i].TimeStamps[0] < a[j].TimeStamps[0]
 }
 
-func (j *jstats) Stats() []jstat {
+func (j *jstats) GenStats() []jstat {
 	m := make([]jstat, 0)
 
 	for _, js := range j.Pages {
@@ -158,7 +161,11 @@ func (j *jstats) Stats() []jstat {
 		js.Samples = len(js.TimeStamps)
 		m = append(m, js)
 	}
+
 	sort.Sort(js(m))
+	j.StartTime = time.Unix(int64(m[0].TimeStamps[0]/1000), 0)
 	j.StatResults = m
+	jsonStr, _ := json.Marshal(m)
+	j.StatResultsJSON = string(jsonStr)
 	return m
 }
