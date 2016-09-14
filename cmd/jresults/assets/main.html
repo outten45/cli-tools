@@ -18,7 +18,7 @@
           <th>Standard Deviation</th>
           <th>Median</th>
           <th>95 Percentile</th>
-          <th>% Error</th>
+          <th>% Error (Count)</th>
         </tr>
       </thead>
       <tbody>
@@ -31,7 +31,7 @@
           <td>{{- .StandardDeviation }}</td>
           <td>{{- .Median }}</td>
           <td>{{- .Percent95 }}</td>
-          <td>{{- .ErrorPercent }}</td>
+          <td>{{- printf "%6.1f" .ErrorPercent }} ({{ .Errors }})</td>
         </tr>
         {{ end  }}
       </tbody>
