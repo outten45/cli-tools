@@ -15,6 +15,13 @@ the following command:
 
     $ go generate
 
+# Building
+
+Used the build script to build a binary the includes the build stamp and
+githash.
+
+    $ ./build.sh
+
 # Usage
 
     $ jresults path/to/results_file.jtl

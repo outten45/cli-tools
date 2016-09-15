@@ -16,12 +16,22 @@ import (
 	"github.com/namsral/flag"
 )
 
+var buildstamp = "Not specified"
+var githash = "Not specified"
+
 func main() {
 	// handle the arguments
 	args := os.Args
 	fs := flag.NewFlagSetWithEnvPrefix(args[0], "JRES", flag.ExitOnError)
 	file := fs.String("csv", "", "csv file with the results to parse")
+	version := fs.Bool("version", false, "provide build information")
 	fs.Parse(args[1:])
+
+	if *version {
+		fmt.Printf("Build Stamp: %s\n", buildstamp)
+		fmt.Printf("   Git Hash: %s\n", githash)
+		os.Exit(0)
+	}
 
 	if *file == "" {
 		log.Fatal("csv file name not provided.")
@@ -110,7 +120,7 @@ type CSVResult struct {
 	ResponseCode string `csv:"responseCode"`
 	Success      string `csv:"success"`
 	Bytes        int    `csv:"bytes"`
-	Latency      int    `csv:"latency"`
+	Latency      int    `csv:"Latency"`
 }
 
 // timeStamp - in milliseconds since 1/1/1970
@@ -122,7 +132,7 @@ type CSVResult struct {
 // dataType - e.g. text
 // success - true or false
 // bytes - number of bytes in the sample
-// latency - time to first response
+// Latency - time to first response
 
 type jstat struct {
 	Label             string
