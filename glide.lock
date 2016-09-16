@@ -1,6 +1,8 @@
-hash: 69512753a86c138937f1bac8279a27b816864a254237e88616a1fb28d97885d4
-updated: 2016-09-05T15:36:15.041452746-04:00
+hash: 092d4185de280408b3408803055a4b290a1bda969066e19083b7af5d1962c1a3
+updated: 2016-09-16T12:48:34.085235423-04:00
 imports:
+- name: github.com/boltdb/bolt
+  version: 583e8937c61f1af6513608ccc75c97b6abdf4ff9
 - name: github.com/gocarina/gocsv
   version: ebca700e1a9e70f1d9881e5e8a27f921b61740cc
 - name: github.com/montanaflynn/stats
