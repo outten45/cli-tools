@@ -23,21 +23,23 @@ func main() {
 	// handle the arguments
 	args := os.Args
 	fs := flag.NewFlagSetWithEnvPrefix(args[0], "JRES", flag.ExitOnError)
-	file := fs.String("csv", "", "csv file with the results to parse")
+	csv := fs.String("csv", "", "jtl file (csv) with the results to parse")
+	db := fs.String("db", "~/.jresults.db", "boltdb database to store results that have been processed")
 	version := fs.Bool("version", false, "provide build information")
 	fs.Parse(args[1:])
 
+	fmt.Printf("db: %s\n", db)
 	if *version {
 		fmt.Printf("Build Stamp: %s\n", buildstamp)
 		fmt.Printf("   Git Hash: %s\n", githash)
 		os.Exit(0)
 	}
 
-	if *file == "" {
+	if *csv == "" {
 		log.Fatal("csv file name not provided.")
 	}
 
-	results := getResults(file)
+	results := getResults(csv)
 	// fmt.Printf("%+v\n", results[0])
 
 	d := getStats(results)
