@@ -11,6 +11,7 @@ const AllIds = "ALL_IDS_KEY"
 
 type StorageService interface {
 	Results(id string) *jstats
+	SaveResults(id string, j *jstats) error
 	AllIds() []string
 }
 
@@ -30,6 +31,24 @@ func (s *BoltStorageService) Results(id string) (*jstats, error) {
 		return nil
 	})
 	return j, err
+}
+
+func (s *BoltStorageService) SaveResults(id string, j *jstats) error {
+	tx, err := s.DB.Begin(true)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	b := tx.Bucket([]byte(s.BucketName))
+
+	// Marshal and insert record.
+	if jstatsJson, err := marshal(j); err != nil {
+		return err
+	} else if err := b.Put([]byte(j.Key()), jstatsJson); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (s *BoltStorageService) AllIds() ([]string, error) {

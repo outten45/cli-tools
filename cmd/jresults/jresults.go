@@ -28,7 +28,7 @@ func main() {
 	version := fs.Bool("version", false, "provide build information")
 	fs.Parse(args[1:])
 
-	fmt.Printf("db: %s\n", db)
+	fmt.Printf("db: %s\n", *db)
 	if *version {
 		fmt.Printf("Build Stamp: %s\n", buildstamp)
 		fmt.Printf("   Git Hash: %s\n", githash)
@@ -196,4 +196,10 @@ func (j *jstats) GenStats() []*jstat {
 	j.StatResultsJSON = string(jsonStr)
 
 	return m
+}
+
+func (j *jstats) Key() string {
+	// (itob(int(d.ID))
+
+	return "yes"
 }
