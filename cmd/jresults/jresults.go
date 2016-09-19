@@ -8,9 +8,12 @@ import (
 	"html/template"
 	"log"
 	"os"
+	"os/user"
 	"sort"
+	"strings"
 	"time"
 
+	"github.com/boltdb/bolt"
 	"github.com/gocarina/gocsv"
 	"github.com/montanaflynn/stats"
 	"github.com/namsral/flag"
@@ -24,11 +27,10 @@ func main() {
 	args := os.Args
 	fs := flag.NewFlagSetWithEnvPrefix(args[0], "JRES", flag.ExitOnError)
 	csv := fs.String("csv", "", "jtl file (csv) with the results to parse")
-	db := fs.String("db", "~/.jresults.db", "boltdb database to store results that have been processed")
+	dbFile := fs.String("db", "~/.jresults.db", "boltdb database to store results that have been processed")
 	version := fs.Bool("version", false, "provide build information")
 	fs.Parse(args[1:])
 
-	fmt.Printf("db: %s\n", *db)
 	if *version {
 		fmt.Printf("Build Stamp: %s\n", buildstamp)
 		fmt.Printf("   Git Hash: %s\n", githash)
@@ -45,6 +47,27 @@ func main() {
 	d := getStats(results)
 	// printResults(d)
 	genHTML(d)
+
+	usr, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	*dbFile = strings.Replace(*dbFile, "~", usr.HomeDir, 1)
+	db, err := bolt.Open(fmt.Sprintf("%s", *dbFile), 0600, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	storage := &BoltStorageService{DB: db, BucketName: []byte("results")}
+	ids, _ := storage.AllIds()
+	jss, err := storage.Results(ids[0])
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("display: %+v\n", jss.Key())
+	// storage.SaveResults(d.Key(), d)
 }
 
 func genHTML(data *jstats) {
@@ -199,7 +222,5 @@ func (j *jstats) GenStats() []*jstat {
 }
 
 func (j *jstats) Key() string {
-	// (itob(int(d.ID))
-
-	return "yes"
+	return j.StartTime.Format(time.RFC3339)
 }

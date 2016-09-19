@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/boltdb/bolt"
 )
@@ -21,16 +20,16 @@ type BoltStorageService struct {
 }
 
 func (s *BoltStorageService) Results(id string) (*jstats, error) {
-	var j *jstats
+	var j jstats
 	err := s.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(s.BucketName))
 		v := b.Get([]byte(id))
-		if err := unmarshal(v, j); err != nil {
+		if err := unmarshal(v, &j); err != nil {
 			return err
 		}
 		return nil
 	})
-	return j, err
+	return &j, err
 }
 
 func (s *BoltStorageService) SaveResults(id string, j *jstats) error {
@@ -40,7 +39,10 @@ func (s *BoltStorageService) SaveResults(id string, j *jstats) error {
 	}
 	defer tx.Rollback()
 
-	b := tx.Bucket([]byte(s.BucketName))
+	b, err := tx.CreateBucketIfNotExists([]byte(s.BucketName))
+	if err != nil {
+		return err
+	}
 
 	// Marshal and insert record.
 	if jstatsJson, err := marshal(j); err != nil {
@@ -56,8 +58,8 @@ func (s *BoltStorageService) AllIds() ([]string, error) {
 	err := s.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(s.BucketName))
 		c := b.Cursor()
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			fmt.Printf("key=%s, value=%s\n", k, v)
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			// fmt.Printf("key=%s, value=%s\n", k, v)
 			r = append(r, string(k))
 		}
 		return nil
