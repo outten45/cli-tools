@@ -21,6 +21,7 @@ import (
 
 var buildstamp = "Not specified"
 var githash = "Not specified"
+var debug = false
 
 func main() {
 	// handle the arguments
@@ -28,6 +29,7 @@ func main() {
 	fs := flag.NewFlagSetWithEnvPrefix(args[0], "JRES", flag.ExitOnError)
 	csv := fs.String("csv", "", "jtl file (csv) with the results to parse")
 	dbFile := fs.String("db", "~/.jresults.db", "boltdb database to store results that have been processed")
+	debug := fs.Bool("verbose", false, "turn on debugging output")
 	version := fs.Bool("version", false, "provide build information")
 	fs.Parse(args[1:])
 
@@ -42,12 +44,16 @@ func main() {
 	}
 
 	results := getResults(csv)
-	// fmt.Printf("%+v\n", results[0])
-
 	d := getStats(results)
-	// printResults(d)
+	if *debug == true {
+		printResults(d)
+	}
 	genHTML(d)
+	saveToDatabase(dbFile, d)
+}
 
+// Save to the BoltStorageService at the given file location.
+func saveToDatabase(dbFile *string, d *jstats) {
 	usr, err := user.Current()
 	if err != nil {
 		log.Fatal(err)
@@ -62,12 +68,12 @@ func main() {
 
 	storage := &BoltStorageService{DB: db, BucketName: []byte("results")}
 	ids, _ := storage.AllIds()
-	jss, err := storage.Results(ids[0])
+	_, err = storage.Results(ids[0])
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("display: %+v\n", jss.Key())
-	// storage.SaveResults(d.Key(), d)
+	// fmt.Printf("display: %+v\n", jss.Key())
+	storage.SaveResults(d)
 }
 
 func genHTML(data *jstats) {
@@ -84,7 +90,7 @@ func genHTML(data *jstats) {
 	}
 }
 
-func printResults(data jstats) {
+func printResults(data *jstats) {
 	for k, v := range data.Pages {
 		mn, _ := stats.Mean(v.Elapsed)
 		fmt.Printf("%s: \t %f (%d)\n", k, mn, len(v.Elapsed))
@@ -109,14 +115,16 @@ func getResults(file *string) []*CSVResult {
 
 func setSuccessError(j *jstat, success string) {
 	if success == "true" {
-		j.Successes += 1
+		j.Successes++
 	} else {
-		j.Errors += 1
+		j.Errors++
 	}
 }
 
 func getStats(results []*CSVResult) *jstats {
 	j := &jstats{}
+	all := &jstat{Label: "Totals"}
+
 	groups := make(map[string]*jstat)
 	for _, r := range results {
 		if js, ok := groups[r.Label]; ok {
@@ -132,12 +140,20 @@ func getStats(results []*CSVResult) *jstats {
 		}
 		js, _ := groups[r.Label]
 		setSuccessError(js, r.Success)
+
+		all.TimeStamps = append(all.TimeStamps, r.TimeStamp)
+		all.Elapsed = append(all.Elapsed, stats.LoadRawData([]int{r.Elapsed})...)
 	}
+
+	j.Totals = all
 	j.Pages = groups
 	j.GenStats()
+	j.GenTotals()
+
 	return j
 }
 
+// CSVResult contains the rows located in the result from the jmeter tests.
 type CSVResult struct {
 	TimeStamp    int    `csv:"timeStamp"`
 	Elapsed      int    `csv:"elapsed"`
@@ -178,6 +194,7 @@ type jstats struct {
 	StartTime       time.Time
 	Pages           map[string]*jstat
 	StatResults     []*jstat
+	Totals          *jstat
 	StatResultsJSON string
 }
 
@@ -190,8 +207,10 @@ func (a js) Less(i, j int) bool {
 	return a[i].TimeStamps[0] < a[j].TimeStamps[0]
 }
 
-func (j *jstats) GenStats() []*jstat {
-	m := make([]*jstat, 0)
+// GenStats updates calculations like mean, standard deviation, median and others
+// on pages in jstats.
+func (j *jstats) GenStats() {
+	var m = make([]*jstat, 0)
 
 	for _, js := range j.Pages {
 		if mean, err := js.Elapsed.Mean(); err == nil {
@@ -218,9 +237,30 @@ func (j *jstats) GenStats() []*jstat {
 	jsonStr, _ := json.Marshal(m)
 	j.StatResultsJSON = string(jsonStr)
 
-	return m
+	return
 }
 
 func (j *jstats) Key() string {
 	return j.StartTime.Format(time.RFC3339)
+}
+
+// GenTotals creates the stats (mean, standard deviation and more) for the
+// totals in jstats.
+func (j *jstats) GenTotals() {
+
+	if mean, err := j.Totals.Elapsed.Mean(); err == nil {
+		j.Totals.Mean = mean
+	}
+	if std, err := j.Totals.Elapsed.StandardDeviation(); err == nil {
+		j.Totals.StandardDeviation = std
+	}
+	if med, err := j.Totals.Elapsed.Median(); err == nil {
+		j.Totals.Median = med
+	}
+	if p95, err := j.Totals.Elapsed.Percentile(95.0); err == nil {
+		j.Totals.Percent95 = p95
+	}
+	j.Totals.Samples = len(j.Totals.TimeStamps)
+	j.Totals.ErrorPercent = (float64(j.Totals.Errors) / float64(j.Totals.Samples)) * 100.0
+
 }

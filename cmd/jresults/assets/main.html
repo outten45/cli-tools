@@ -35,6 +35,18 @@
           <td class="text-right">{{- printf "%6.1f" .ErrorPercent }} ({{ .Errors }})</td>
         </tr>
         {{ end  }}
+        <tfoot>
+          <tr>
+            <td></td>
+            <th>Totals:</th>
+            <td class="text-right">{{- .Totals.Samples }}</td>
+            <td class="text-right">{{- printf "%6.3f" .Totals.Mean }}</td>
+            <td class="text-right">{{- printf "%6.3f" .Totals.StandardDeviation }}</td>
+            <td class="text-right">{{- .Totals.Median }}</td>
+            <td class="text-right">{{- .Totals.Percent95 }}</td>
+            <td class="text-right">{{- printf "%6.1f" .Totals.ErrorPercent }} ({{ .Totals.Errors }})</td>
+          </tr>
+        </tfoot>
       </tbody>
     </table>
     <div id="chart"></div>

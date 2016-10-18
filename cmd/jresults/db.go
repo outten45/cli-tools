@@ -32,7 +32,7 @@ func (s *BoltStorageService) Results(id string) (*jstats, error) {
 	return &j, err
 }
 
-func (s *BoltStorageService) SaveResults(id string, j *jstats) error {
+func (s *BoltStorageService) SaveResults(j *jstats) error {
 	tx, err := s.DB.Begin(true)
 	if err != nil {
 		return err
