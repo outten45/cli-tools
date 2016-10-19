@@ -57,6 +57,10 @@ func (s *BoltStorageService) AllIds() ([]string, error) {
 	r := []string{}
 	err := s.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(s.BucketName))
+		if b == nil {
+			// fmt.Fprintf(os.Stderr, "Unable to open: %s\n", s.BucketName)
+			return nil
+		}
 		c := b.Cursor()
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
 			// fmt.Printf("key=%s, value=%s\n", k, v)

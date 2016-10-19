@@ -44,7 +44,7 @@ func main() {
 	}
 
 	results := getResults(csv)
-	d := getStats(results)
+	d := createStats(results)
 	if *debug == true {
 		printResults(d)
 	}
@@ -67,11 +67,11 @@ func saveToDatabase(dbFile *string, d *jstats) {
 	defer db.Close()
 
 	storage := &BoltStorageService{DB: db, BucketName: []byte("results")}
-	ids, _ := storage.AllIds()
-	_, err = storage.Results(ids[0])
-	if err != nil {
-		log.Fatal(err)
-	}
+	// ids, _ := storage.AllIds()
+	// _, err = storage.Results(ids[0])
+	// if err != nil {
+	// log.Fatal(err)
+	// }
 	// fmt.Printf("display: %+v\n", jss.Key())
 	storage.SaveResults(d)
 }
@@ -121,7 +121,8 @@ func setSuccessError(j *jstat, success string) {
 	}
 }
 
-func getStats(results []*CSVResult) *jstats {
+// createStats populates the jmeter stats from the provide CSVResult slice.
+func createStats(results []*CSVResult) *jstats {
 	j := &jstats{}
 	all := &jstat{Label: "Totals"}
 
@@ -143,6 +144,7 @@ func getStats(results []*CSVResult) *jstats {
 
 		all.TimeStamps = append(all.TimeStamps, r.TimeStamp)
 		all.Elapsed = append(all.Elapsed, stats.LoadRawData([]int{r.Elapsed})...)
+		setSuccessError(all, r.Success)
 	}
 
 	j.Totals = all
